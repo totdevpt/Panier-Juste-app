@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Comparez les prix des produits du quotidien dans les magasins près de chez vous.">
+  <title>Panier Juste · Comparateur de courses local</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #173329; background: #f6f7ef; --line: #dce5d8; --muted: #42594e; --green: #173a2d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .wrap { width: min(100% - 2rem, 68rem); margin-inline: auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1.15rem; }
+    .brand { font-weight: 850; font-size: 1rem; color: inherit; text-underline-offset: .2em; }
+    .badge { display: inline-block; padding: .28rem .62rem; border-radius: 2rem; background: #e6efd9; color: #264a36; font-size: .8rem; font-weight: 700; }
+    .hero { padding: clamp(1.5rem, 5vw, 3.5rem); border-radius: 1.5rem; color: #fffef5; background: var(--green); }
+    .eyebrow { margin: 0; color: #d8eca6; font-weight: 750; }
+    h1 { margin: .55rem 0 .8rem; font-size: clamp(2rem, 6vw, 4.1rem); line-height: 1.05; letter-spacing: -.045em; }
+    p { line-height: 1.55; }
+    .hero p:last-child { max-width: 55ch; margin-bottom: 0; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-block: 1rem 2.5rem; }
+    .panel { padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: 1.15rem; background: white; }
+    h2, h3 { margin: 0 0 .65rem; line-height: 1.2; }
+    h2 { font-size: 1.35rem; }
+    h3 { font-size: 1.12rem; }
+    .fields, .prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+    label { display: grid; align-content: start; gap: .3rem; font-size: .9rem; font-weight: 650; min-width: 0; }
+    input, select, button { font: inherit; }
+    input, select { min-width: 0; width: 100%; min-height: 2.65rem; padding: .4rem .55rem; border-radius: .55rem; border: 1px solid #aebfb2; background: white; color: inherit; }
+    button { cursor: pointer; border: 0; border-radius: .65rem; background: var(--green); color: white; padding: .7rem .95rem; font-weight: 700; }
+    :focus-visible { outline: 3px solid #277849; outline-offset: 3px; }
+    form, .results { display: grid; gap: .9rem; }
+    .results { margin-top: 1rem; }
+    .offer { min-width: 0; padding: .8rem; border: 1px solid var(--line); border-radius: .8rem; background: #f8faf5; overflow-wrap: anywhere; }
+    .offer p { margin: .25rem 0 0; }
+    .price { display: block; font-size: 1.65rem; line-height: 1.25; font-weight: 800; letter-spacing: -.03em; }
+    .muted, small { color: var(--muted); font-size: .88rem; font-weight: 400; }
+    .muted { margin: 0; }
+    .note { margin: 0; padding: .7rem .85rem; background: #edf4e4; border-radius: .65rem; }
+    .note + .note { margin-top: .45rem; }
+    .history { margin-top: 1.25rem; }
+    summary { cursor: pointer; font-weight: 700; }
+    .history ul { padding-left: 1.2rem; overflow-wrap: anywhere; }
+    .history li { margin: .45rem 0; }
+    .remove { padding: .2rem .35rem; margin-left: .25rem; color: #833526; background: #f9eeea; font-size: .8rem; }
+    #status:empty { display: none; }
+    @media (max-width: 48rem) { .layout { grid-template-columns: 1fr; } }
+    @media (max-width: 24rem) { .fields, .prices { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="wrap"><a class="brand" href="./">← Retour à Panier Juste</a><span class="badge">Pilote local</span></header>
+  <main class="wrap">
+    <section class="hero" aria-labelledby="title">
+      <p class="eyebrow">Comparateur de courses local</p>
+      <h1 id="title">Comparez les prix près de chez vous</h1>
+      <p>Choisissez un produit, consultez les relevés par magasin et comparez les formats grâce au prix au kilo, au litre ou à l’unité.</p>
+    </section>
+    <div class="layout">
+      <section class="panel" aria-labelledby="compare-title">
+        <h2 id="compare-title">Comparer un produit</h2>
+        <div class="fields">
+          <label>Rayon<select id="category"></select></label>
+          <label>Produit<select id="product"></select></label>
+        </div>
+        <div id="results" class="results" aria-live="polite"></div>
+        <details class="history"><summary>Historique des relevés</summary><div id="history"></div></details>
+      </section>
+      <section class="panel" aria-labelledby="add-title">
+        <h2 id="add-title">Ajouter un relevé</h2>
+        <form id="entry">
+          <label>Produit<select name="product" required></select></label>
+          <label>Magasin<select name="store" required>
+            <option value="carrefour">Carrefour Pontault-Combault</option>
+            <option value="marche-frais">Marché Frais</option>
+          </select></label>
+          <label>Libellé du produit<input name="label" required maxlength="100" placeholder="Ex. fromage blanc nature 0 %"></label>
+          <div class="fields">
+            <label>Prix payé en €<input name="price" required type="text" inputmode="decimal" pattern="[0-9]{1,4}([.,][0-9]{1,2})?" placeholder="Ex. 1,79"></label>
+            <label><span id="format-label">Format en g</span><input name="quantity" type="number" min="1" max="100000" step="1" placeholder="Facultatif"></label>
+          </div>
+          <div class="fields">
+            <label>Date du relevé<input name="date" type="date" required></label>
+            <label>Source<select name="source" required>
+              <option>Ticket de caisse</option><option>Étiquette en rayon</option><option>Drive</option><option>Catalogue</option>
+            </select></label>
+          </div>
+          <button type="submit">Enregistrer le relevé</button>
+          <p id="status" class="note" role="status"></p>
+          <p class="muted">Vos relevés sont enregistrés dans ce navigateur.</p>
+        </form>
+      </section>
+    </div>
+  </main>
+  <script>
+    const catalog = [
+      ['frais', 'Frais · Produits laitiers', [
+        ['fromage-blanc', 'Fromage blanc nature 0 %', 'g'],
+        ['lait', 'Lait demi-écrémé UHT', 'ml'],
+        ['beurre', 'Beurre doux', 'g'],
+        ['emmental', 'Emmental râpé', 'g'],
+        ['mozzarella', 'Mozzarella nature', 'g'],
+      ]],
+      ['conserves', 'Épicerie salée · Conserves', [
+        ['mais', 'Maïs doux en conserve', 'g', true],
+        ['pois-chiches', 'Pois chiches en conserve', 'g', true],
+        ['thon', 'Thon au naturel en conserve', 'g', true],
+      ]],
+      ['basiques', 'Épicerie salée · Basiques', [
+        ['pates', 'Pâtes sèches nature', 'g'],
+        ['riz', 'Riz long blanc', 'g'],
+        ['farine', 'Farine de blé T55', 'g'],
+      ]],
+      ['boissons', 'Boissons · Sans alcool', [
+        ['eau', 'Eau plate', 'ml'],
+        ['jus-orange', 'Pur jus d’orange', 'ml'],
+      ]],
+      ['encas', 'Petit-déjeuner et encas', [
+        ['the', 'Thé noir nature en sachets', 'u'],
+        ['cafe', 'Café moulu', 'g'],
+      ]],
+    ];
+    const stores = {carrefour: 'Carrefour Pontault-Combault', 'marche-frais': 'Marché Frais'};
+    const products = new Map(catalog.flatMap(([category, , items]) => items.map(([id, label, unit, drained]) =>
+      [id, {label, unit, drained, category}])));
+    const seed = [
+      {product: 'fromage-blanc', store: 'carrefour', cents: 179, source: 'Prix évoqué · à confirmer'},
+      {product: 'fromage-blanc', store: 'marche-frais', cents: 209, source: 'Prix évoqué · à confirmer'},
+    ];
+    const storageKey = 'panier-juste.releves.v1';
+    const category = document.querySelector('#category');
+    const product = document.querySelector('#product');
+    const form = document.querySelector('#entry');
+    const entry = form.elements;
+    const results = document.querySelector('#results');
+    const history = document.querySelector('#history');
+    const status = document.querySelector('#status');
+    const euros = new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'});
+    const decimal = new Intl.NumberFormat('fr-FR');
+    const money = cents => euros.format(cents / 100);
+    let observations = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? '[]');
+      if (Array.isArray(saved)) observations = saved;
+    } catch {
+      status.textContent = 'Les relevés enregistrés dans ce navigateur sont indisponibles.';
+    }
+
+    function element(tag, content, className) {
+      const node = document.createElement(tag);
+      if (content) node.textContent = content;
+      if (className) node.className = className;
+      return node;
+    }
+
+    function setProductOptions(preferred) {
+      const items = catalog.find(([id]) => id === category.value)[2];
+      product.replaceChildren(...items.map(([id, label]) => new Option(label, id)));
+      if (items.some(([id]) => id === preferred)) product.value = preferred;
+    }
+
+    function updateFormatLabel() {
+      const item = products.get(entry.product.value);
+      document.querySelector('#format-label').textContent = item.drained ? 'Poids égoutté en g'
+        : {g: 'Format en g', ml: 'Format en ml', u: 'Nombre de sachets'}[item.unit];
+    }
+
+    function unitRate(offer, item) {
+      return offer.quantity ? offer.cents * (item.unit === 'u' ? 1 : 1000) / offer.quantity : null;
+    }
+
+    function render() {
+      const item = products.get(product.value);
+      const denominator = {g: 'kg', ml: 'L', u: 'sachet'}[item.unit];
+      const unitName = {g: 'kilo', ml: 'litre', u: 'sachet'}[item.unit];
+      const entries = observations.filter(row => row.product === product.value)
+        .reverse().sort((a, b) => b.date.localeCompare(a.date));
+      const examples = seed.filter(row => row.product === product.value);
+      const list = document.createElement('ul');
+      history.replaceChildren();
+      for (const row of entries) {
+        const date = row.date.split('-').reverse().join('/');
+        const li = element('li', date + ' · ' + stores[row.store] + ' · ' + row.label + ' · ' + money(row.cents));
+        const button = element('button', 'Retirer', 'remove');
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Retirer le relevé du ' + date + ' chez ' + stores[row.store]);
+        button.addEventListener('click', () => {
+          if (save(observations.filter(observation => observation !== row), 'Relevé retiré.')) render();
+        });
+        li.append(button);
+        list.append(li);
+      }
+      history.append(entries.length ? list : element('p', 'Aucun relevé saisi pour ce produit.', 'muted'));
+
+      const current = Object.keys(stores).map(store => [store,
+        entries.find(row => row.store === store) ?? examples.find(row => row.store === store)]);
+      const cards = element('div', '', 'prices');
+      for (const [store, row] of current) {
+        const card = element('article', '', 'offer');
+        card.append(element('h3', stores[store]));
+        if (!row) {
+          card.append(element('p', 'Aucun prix relevé', 'muted'));
+        } else {
+          const rate = unitRate(row, item);
+          card.append(element('strong', money(row.cents), 'price'));
+          if (row.label) card.append(element('p', row.label));
+          card.append(element('p', rate === null ? 'Format non renseigné'
+            : decimal.format(row.quantity) + ' ' + (item.unit === 'u' ? 'sachet(s)' : item.unit)
+              + ' · ' + money(rate) + '/' + denominator, 'muted'));
+          card.append(element('p', row.source + ' · '
+            + (row.date ? row.date.split('-').reverse().join('/') : 'Date inconnue'), 'muted'));
+        }
+        cards.append(card);
+      }
+      results.replaceChildren(cards);
+
+      const [first, second] = current.map(([, row]) => row);
+      if (!first || !second) return;
+      if (!first.date || !second.date) {
+        if (first.date || second.date) {
+          results.append(element('p', 'Un relevé daté est nécessaire dans chaque magasin pour calculer l’écart.', 'note'));
+          return;
+        }
+        const difference = Math.abs(first.cents - second.cents);
+        const lower = first.cents < second.cents ? first : second;
+        results.append(element('p', 'Exemple à confirmer · ' + money(difference) + ' de moins chez '
+          + stores[lower.store] + ' sur le prix affiché. Vérifiez les formats pour comparer au kilo.', 'note'));
+        return;
+      }
+      const summary = document.createElement('div');
+      const firstRate = unitRate(first, item);
+      const secondRate = unitRate(second, item);
+      if (firstRate !== null && secondRate !== null) {
+        appendDifference(summary, 'Au ' + unitName, firstRate, secondRate, first, second);
+      }
+      appendDifference(summary, 'Par emballage', first.cents, second.cents, first, second);
+      if (firstRate === null || secondRate === null) {
+        summary.append(element('p', 'Renseignez les deux formats pour comparer au ' + unitName + '.', 'muted'));
+      }
+      if (first.date !== second.date) {
+        summary.append(element('p', 'Les prix ont été relevés à des dates différentes.', 'muted'));
+      }
+      results.append(summary);
+    }
+
+    function appendDifference(container, heading, firstAmount, secondAmount, first, second) {
+      const difference = Math.abs(Math.round(firstAmount) - Math.round(secondAmount));
+      const lower = firstAmount < secondAmount ? first : second;
+      const message = difference ? money(difference) + ' de moins chez ' + stores[lower.store] : 'même prix au centime près';
+      container.append(element('p', heading + ' · ' + message, 'note'));
+    }
+
+    function save(next, message) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        status.textContent = 'Impossible d’enregistrer les relevés dans ce navigateur.';
+        return false;
+      }
+      observations = next;
+      status.textContent = message;
+      return true;
+    }
+
+    category.replaceChildren(...catalog.map(([id, label]) => new Option(label, id)));
+    entry.product.replaceChildren(...Array.from(products, ([id, item]) => new Option(item.label, id)));
+    setProductOptions();
+    updateFormatLabel();
+    render();
+    const today = new Intl.DateTimeFormat('sv-SE', {timeZone: 'Europe/Paris'}).format(new Date());
+    entry.date.value = today;
+    entry.date.max = today;
+
+    category.addEventListener('change', () => { setProductOptions(); render(); });
+    product.addEventListener('change', render);
+    entry.product.addEventListener('change', updateFormatLabel);
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const label = entry.label.value.trim();
+      const [eurosPart, centsPart = ''] = entry.price.value.split(/[.,]/);
+      const cents = Number(eurosPart) * 100 + Number(centsPart.padEnd(2, '0'));
+      if (!label || !cents) {
+        status.textContent = 'Renseignez un libellé et un prix supérieur à zéro.';
+        return;
+      }
+      const row = {
+        product: entry.product.value,
+        store: entry.store.value,
+        label,
+        cents,
+        quantity: entry.quantity.valueAsNumber || null,
+        date: entry.date.value,
+        source: entry.source.value,
+      };
+      if (!save([...observations, row], 'Relevé enregistré.')) return;
+      category.value = products.get(row.product).category;
+      setProductOptions(row.product);
+      entry.label.value = '';
+      entry.price.value = '';
+      entry.quantity.value = '';
+      render();
+    });
+  </script>
+</body>
+</html>
